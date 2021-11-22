@@ -52,18 +52,21 @@ cas = read.csv('CAS-Fellow-2001-2021.csv', fileEncoding = 'UTF-8')
 于是，本吃瓜群众想找相关公开、整理好的数据集来自己分析，但这又一次失败了——呜呼哀哉，原来并没有人分享整理好的数据集！
 
 作为一名写得了爬虫、洗得白数据、画得好图表，还会rmarkdown自动化生成动态文档的六边形吃瓜群众，这些又有何难？
-于是这篇并不那么严谨，且仅为满足本吃瓜群众莫名暴增的好奇心的简单粗暴分析报告就应运而生了。
+于是这篇并不那么严谨，且仅为满足本吃瓜群众莫名好奇心的简单粗暴分析报告就诞生了。
 
 
-我们抓取、整理2000年以来的中科院院士增选信息以及相关单位的地址和类型，
+我们整理了2000-2021年共11次中科院院士增选信息以及相关单位地址和类型，
 从人数、学部、单位、双一流大学、区域、单位类型、年龄等多个角度进行统计、可视化和比较分析。
-
-必须为自己点赞的是，本文所有的数据、代码都完全公布，报告基于rmarkdown和Git的可重复框架。
-读者运行rmd文件即可得到同样的报告，欢迎更多吃瓜群众围观、挑错和协作改进！
 关于数据集和代码相关更详细的说明，参见文末。
 
-首先，我们先看2000年以来，中科院院士增选的简要数据。下面的表格支持搜索和按列排序。
-比如，您可以在搜索框输入某所大学、某个专业来查询相关数据。
+首先，我们先看2000年以来，中科院院士增选的简要数据。
+下面的表格支持搜索和按列排序（仅支持HTML电脑端，如果是微信/知乎端，请点击动态报告链接在电脑端交互查看）。
+
+您可以在搜索框输入某所大学、某个专业来查询相关数据。首先，直接可以看到，有584条信息，对应584个增选院士的信息。
+搜索“女”，有40条记录，说明新千年后共有40位女性入选。搜索“天体物理”，有8条记录，都是专业为天体物理的。
+搜索“香港”，有21条记录，都是香港高校的入选院士信息。按年龄排序，很快会发现最小的是37岁，最大的是75岁。
+是不是便捷如Excel？但又不需要打开Excel:)
+
 
 ```{r}
 datatable(cas, rownames = FALSE)
@@ -171,7 +174,7 @@ for(i in 2:12){
 }
 nEmpl = nrow(countDeptDat3Zero2NA)
 datatable(countDeptDat3Zero2NA,  options = list(pageLength=10), # filter = 'top',
-          colnames = c('单位', Y01_21, '和'), rownames = NULL)
+          colnames = c('单位', Y01_21, '和'))
 ```
 
 ```{r fig.width=8, fig.height=10, out.width='600px', echo=FALSE}
@@ -230,11 +233,11 @@ ggplot(s36, aes(x=reorder(Empl, Sum), y=Sum)) +
 从图中可以得到：
 
 
-- 20+个院士入选的高校有`r length(subset(s36, Sum>20)$Empl)`所：`r gsub(',','、',toString(subset(s36, Sum>20)$Empl))`
-- 10~19个院士入选的高校有`r length(subset(s36, Sum>=10 & Sum<20)$Empl)`所：`r gsub(',','、',toString(subset(s36, Sum>=10 & Sum<20)$Empl))`
-- 5~9个院士入选的高校有`r length(subset(s36, Sum>=5 & Sum<10)$Empl)`所：`r gsub(',','、',toString(subset(s36, Sum>=5 & Sum<10)$Empl))`
-- 1~4个院士入选的高校有`r length(subset(s36, Sum>=1 & Sum<5)$Empl)`所：`r gsub(',','、',toString(subset(s36, Sum>=1 & Sum<5)$Empl))`
-- 0个院士入选的高校有`r length(subset(s36, Sum<0.5)$Empl)`所：`r gsub(',','、',toString(subset(s36, Sum<0.5)$Empl))`
+- 有20+个院士入选的高校有`r length(subset(s36, Sum>20)$Empl)`所：`r gsub(',','、',toString(subset(s36, Sum>20)$Empl))`
+- 有10~19个院士入选的高校有`r length(subset(s36, Sum>=10 & Sum<20)$Empl)`所：`r gsub(',','、',toString(subset(s36, Sum>=10 & Sum<20)$Empl))`
+- 有5~9个院士入选的高校有`r length(subset(s36, Sum>=5 & Sum<10)$Empl)`所：`r gsub(',','、',toString(subset(s36, Sum>=5 & Sum<10)$Empl))`
+- 有1~4个院士入选的高校有`r length(subset(s36, Sum>=1 & Sum<5)$Empl)`所：`r gsub(',','、',toString(subset(s36, Sum>=1 & Sum<5)$Empl))`
+- 有0个院士入选的高校有`r length(subset(s36, Sum<0.5)$Empl)`所：`r gsub(',','、',toString(subset(s36, Sum<0.5)$Empl))`
 
 
 ## 区域分析
@@ -290,7 +293,7 @@ ggplot(provCount, aes(x=reorder(Prov, Sum), y=Sum)) +
 
 ## 单位类型分析
 
-接下来，我们从单位的类型来汇总和查看数据。
+接下来，我们按单位的类型来汇总和查看数据。
 
 
 ```{r echo=FALSE}
@@ -340,7 +343,7 @@ ggplot(ageDat, aes(x=Year, y=AveAge)) + geom_bar(stat = 'identity', fill='pink')
 ```
 很明显，从2001到2011年间，中科院新入选院士的年龄整体变小，趋势明显
 尤其在2011年，入选年龄算数均值最低，2011年的平均年龄（52.69岁）比2001年（60.59岁）小了将近8岁！
-而此后，年龄总体小幅度上扬，2021年的平均年龄比2011年增加了5岁。
+而此后，年龄总体小幅度上扬，2021年的平均年龄比2011年增加了5岁。背后的机制和原因有待考察。
 
 
 ```{r age, out.width='600px'}
@@ -351,8 +354,8 @@ ggplot(cas, aes(x=Year, y=Age)) + geom_boxplot(aes(fill=Year)) +
 更进一步，我们来看分布的变化。从图中可以看到，40岁以下的离群点有三个，都是在2001和2003年。
 年龄最大的是在2011年产生，75岁。
 从图中还可以看到，2005、2007、2009年度增选院士的年龄分布比较宽，
-此后院士年龄的分布标准差变小，也就是年龄越来越集中。
-可以猜测，院士的年龄，可能也被作为一个重要的考察因素。
+此后院士年龄的分布变窄，也就是年龄越来越集中。
+在此大胆猜测，院士的年龄，可能也被作为一个重要的考察因素。太大或者太小，概率都会降低。
 
 
 
@@ -370,15 +373,15 @@ ggplot(cas, aes(x=Year, y=Age, fill=Dept)) + geom_boxplot() + facet_wrap(~Dept) 
 
 以上，就是本文对中科院2000年以来11次院士增选的初步分析。
 
-鉴于本吃瓜群众不了解相关业务知识，因此仅从数据表现上阐述一些非常初步的规律。
+鉴于本吃瓜群众不了解相关业务知识，因此仅从数据表现上阐述了一些非常初步的规律。
 如果您对数据背后的业务和规律有更多了解，欢迎指正和补充。
 
 
 ## 数据和程序说明
 
 院士增选数据来自于[中科院官网](http://casad.cas.cn/yszx2017/jj/201504/t20150429_4683835.html)，
-我们通过爬虫和OCR工具获取和整理了原始数据，经过初步的人工审核，存放在`CAS-Fellow-2001-2021.csv`文件中。
-为了分析单位所在的省、市和类型，建立了入选单位的省、市和类型对照数据表，主要靠人工维护，存放在`Empl_location.csv`文件中。
+我们整理了原始数据，经过初步的人工审核，存放在`CAS-Fellow-2001-2021.csv`文件中。
+为了分析单位所在的省、市和类型，建立了入选单位的省、市和类型对照数据表，存放在`Empl_location.csv`文件中。
 本报告用rmarkdown撰写，相关图表自动生成，得到的HTML文档中的表格支持搜索和交互查询。
 
 还需要特别说明的几点是：
@@ -386,20 +389,29 @@ ggplot(cas, aes(x=Year, y=Age, fill=Dept)) + geom_boxplot() + facet_wrap(~Dept) 
 - 同一个单位在不同年份叫法并不统一（比如中科院X所，中国科学院X所），我们对这些单位名称进行了归一
 - 生命科学和医学学部之前被称为生物学部，统一为现在的名称：生命科学和医学学部
 - 大学的附属医院、国企的下属研究院往上进行了合并，比如复旦大学附属中山医院，合并入复旦大学
-- 部分单位在多个地方有分布，在填写所在地的时候，一般以总部为主，比如北京，这样会有一点副作用
-- 少数院士有两个单位，我们在计算的时候只要单位都在国内，都分别都算1个
-- 部分单位在历史中，发生过组织上的合并和撤销，对这方面也不作处理
+- 部分单位在多个地方有分布，在填写所在地的时候，一般以总部为主，比如北京
+- 少数院士有两个单位，我们在计算的时候只要单位都在国内，都各算1个
+- 部分单位在历史中，发生过组织上的合并和撤销，对这方面不作处理
 
 
 ## 项目地址和版权协议
 
+本文所有的数据、代码都完全公布，报告基于rmarkdown和Git的可重复框架。
+读者运行rmd文件即可得到同样的报告，欢迎更多吃瓜群众围观、挑错和协作改进！
+
 本项目相关地址如下，欢迎star、fork、pr三连：
 
-- 主页地址：[https://cosx.org/CAS-fellow.html](https://github.com/cosname/CAS-fellow/)
-- Github地址：[https://github.com/cosname/CAS-fellow/](https://github.com/cosname/CAS-fellow/)
-- Gitee地址：[https://gitee.com/costudy/CAS-fellow/](https://gitee.com/costudy/CAS-fellow/)
+- 动态报告：[https://cosx.org/CAS-fellow.html](https://github.com/cosname/CAS-fellow/)
+- 项目地址（Github）：[https://github.com/cosname/CAS-fellow/](https://github.com/cosname/CAS-fellow/)
+- 项目地址（Gitee）：[https://gitee.com/costudy/CAS-fellow/](https://gitee.com/costudy/CAS-fellow/)
 
 本项目版权协议使用[木兰宽松许可证第二版](http://license.coscl.org.cn/MulanPSL2)，请遵守相关规定。
+
+引用格式：
+
+> 六边形吃瓜群众，**数说风云：2000-2021年中科院院士增选数据分析**，统计之都，2021，URL：https://cosx.org/CAS-fellow.html
+
+
 
 ## 关于数说风云
 
