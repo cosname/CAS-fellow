@@ -1,0 +1,412 @@
+---
+title: '数说风云：中科院近20年院士增选之数据分析'
+author: '六边形吃瓜群众'
+date: '`r Sys.Date()`'
+output: 
+  prettydoc::html_pretty
+---
+
+```{r setup, include=FALSE}
+library(showtext)
+knitr::opts_chunk$set(echo = FALSE, fig.showtext = TRUE, message = FALSE,
+                      fig.align = 'center', dpi=350)
+get_os = function() {
+  sysinf = Sys.info()
+  if (!is.null(sysinf)) {
+    os = sysinf['sysname']
+    if (os == 'Darwin')
+      os = 'osx'
+  } else { ## mystery machine
+    os = .Platform$OS.type
+    if (grepl('^darwin', R.version$os))
+      os = 'osx'
+    if (grepl('linux-gnu', R.version$os))
+      os = 'linux'
+  }
+  tolower(os)
+}
+
+if(get_os() =='windows' & capabilities('cairo') | all(capabilities(c('cairo', 'X11')))) {
+  knitr::opts_chunk$set(dev.args = list(type='cairo'))
+}
+options(digits = 2)
+```
+
+
+
+```{r dat, message=FALSE}
+## 载入要用的包
+library(ggplot2)
+theme_set(theme_bw())
+library(corrplot)
+library(dplyr)
+library(tidyr)
+library(DT)
+## 载入数据
+cas = read.csv('CAS-Fellow-2001-2021.csv', fileEncoding = 'UTF-8')
+```
+## 概览
+
+最近，中科院院士增选信息刷爆了网络。不少个人、大学、研究院、初高中、省市发布喜讯，光本吃瓜群众的朋友圈就有数十条喜气洋洋的转发。
+但这些新闻大都聚焦于个人或某个单位，而本吃瓜群众不仅想看个人八卦，更想看到一个较为全面的统计分析，多次搜索却没有看到。
+于是，本吃瓜群众想找相关公开、整理好的数据集来自己分析，但这又一次失败了——呜呼哀哉，原来并没有人分享整理好的数据集！
+
+作为一名写得了爬虫、洗得白数据、画得好图表，还会rmarkdown自动化生成动态文档的六边形吃瓜群众，这些又有何难？
+于是这篇并不那么严谨，且仅为满足本吃瓜群众莫名暴增的好奇心的简单粗暴分析报告就应运而生了。
+
+
+我们抓取、整理2000年以来的中科院院士增选信息以及相关单位的地址和类型，
+从人数、学部、单位、双一流大学、区域、单位类型、年龄等多个角度进行统计、可视化和比较分析。
+
+必须为自己点赞的是，本文所有的数据、代码都完全公布，报告基于rmarkdown和Git的可重复框架。
+读者运行rmd文件即可得到同样的报告，欢迎更多吃瓜群众围观、挑错和协作改进！
+关于数据集和代码相关更详细的说明，参见文末。
+
+首先，我们先看2000年以来，中科院院士增选的简要数据。下面的表格支持搜索和按列排序。
+比如，您可以在搜索框输入某所大学、某个专业来查询相关数据。
+
+```{r}
+datatable(cas, rownames = FALSE)
+```
+
+
+## 人数变化
+
+```{r summary, out.width='600px'}
+## 列名改中文，年份因子化
+colnames(cas) = c('Name','Age','Major','Empl','Dept','Year')
+cas$Year = factor(as.character(cas$Year))
+
+countDat = summarise(group_by(cas, Year), Count=n())
+N = sum(countDat$Count) ## 计算总数
+ggplot(countDat, aes(x=Year, y=Count)) + geom_bar(stat = 'identity', fill='pink')+
+  geom_text(aes(label = Count), vjust = - 0.2)  + xlab(NULL) + ylab('年龄')
+```
+2000年以来中国科学院入选院士总人数为`r N`个，每两年选一次（奇数年），每次人数大都在50~65之间。
+但2007、2009这两年出现了断崖式下跌，2007为29人，2009年为35人。我们进一步吃瓜，查阅了当年的新闻。
+发现这两年总名额都为60位，但投票规则较以往更为严苛，要求新增选院士获得的赞同票要不少于投票人数的2/3才有当选资格。
+要求非常高，竞争很激烈，因此很多名额都落空了。
+
+
+```{r fig.width=7, fig.height=3.5, out.width='600px'}
+countDeptDat = summarise(group_by(cas, Year, Dept), Count=n())
+countDeptDatWide = countDeptDat %>% spread(Year, Count) 
+mat = as.matrix(countDeptDatWide[,-1])
+#mat[which(is.na(mat))] = 0
+rownames(mat) = countDeptDatWide$Dept
+corrplot(mat, method='color',is.corr=FALSE, addCoef.col = 'grey30', na.label = ' ',
+         col.lim = c(0, 20), tl.srt = 0, tl.cex = 1, tl.col = 'grey30')
+```
+
+## 学部分析
+
+我们再来分学部和年份看看，用热力图看到各个学部的入选人数。可以看到，
+
+- 最高的是2013年技术科学部17人，最低的是2007年信息技术科学部1人
+- 信息技术科学部成立似乎较晚，从2005年才开始有院士入选
+- 技术科学部的院士入选数目起伏是最大的。最大值17，最小值5，极差12
+- 自2011年后，数学物理学部和化学部的院士入选人数，逐年小幅增加1人或者持平
+其他学部入选人数在个别年略有下降
+
+我们再来画折线图来更明显地来看趋势:
+
+```{r fig.width=6,fig.height=4}
+countDeptDat = summarise(group_by(cas, Dept, Year), Count=n())
+## 列名缩短
+Y01_21 = c(paste0(0, seq(1,9,2)), seq(11,21,2))
+## 画图
+ggplot(countDeptDat, aes(x=Year, y=Count, group=Dept)) + 
+  geom_line(aes(colour = Dept)) + facet_wrap(~Dept) +
+  scale_x_discrete(breaks=seq(2001,2021,2), labels=Y01_21) +
+  theme(legend.position = 'none')  +  ylab('人数') + xlab('年份')
+```
+
+
+
+```{r, out.width='600px', eval=FALSE}
+## 看看比例变化
+ggplot(countDeptDat, aes(x=Year, y=Count, fill=Dept)) + 
+  geom_bar(stat = 'identity', position = "fill") + 
+  xlab(NULL) + ylab('人数')
+```
+
+
+```{r location, echo=FALSE}
+loc = read.csv('Empl_location.csv', fileEncoding = 'UTF-8')
+rownames(loc) = loc[,1]
+
+countEmplDat0 = summarise(group_by(cas, Empl, Year), Count=n())
+# 找出两个工作单位的院士
+i = grep('、', countEmplDat0$Empl)
+doubleEmpl = countEmplDat0[i,]
+df1 = df2 = doubleEmpl
+df1$Empl = gsub('^.*、', '', df1$Empl)
+df2$Empl = gsub('、.*$', '', df2$Empl)
+df = rbind(df1, df2)
+outEmpl = c("美国麻省理工学院", "普林斯顿大学")
+df = df[which(!(df$Empl %in% outEmpl)),]
+countEmplDat1 = rbind(countEmplDat0[-i,], df)
+## 因为多个单位之前少算的加回去
+countEmplDat2 = summarise(group_by(countEmplDat1, Year, Empl), Count=sum(Count))
+countDeptDat3 = countEmplDat2 %>% spread(Year, Count) 
+countDeptDat3[is.na(countDeptDat3)] = 0
+countDeptDat3 = data.frame(countDeptDat3, Sum=rowSums(countDeptDat3[,-1]))
+countDeptDat3 = arrange(countDeptDat3, desc(Sum))
+
+countDeptDatWide = cbind(countDeptDat3[,1], loc[countDeptDat3$Empl,2:4], countDeptDat3[,-1])
+colnames(countDeptDatWide)[1:4] = c('Empl', 'Prov', 'City', 'Type')
+rownames(countDeptDatWide) = NULL
+```
+
+## 单位分析
+
+我们按单位、年份来统计院士增选人，并按照总和从高到低排序。
+在搜索框可以搜索相关数据，点击列名可以按高低排序。
+
+```{r echo=FALSE}
+countDeptDat3Zero2NA = countDeptDat3
+for(i in 2:12){
+  f = which(countDeptDat3Zero2NA[, i]==0)
+  countDeptDat3Zero2NA[f, i] = NA
+}
+nEmpl = nrow(countDeptDat3Zero2NA)
+datatable(countDeptDat3Zero2NA,  options = list(pageLength=10), # filter = 'top',
+          colnames = c('单位', Y01_21, '和'), rownames = NULL)
+```
+
+```{r fig.width=8, fig.height=10, out.width='600px', echo=FALSE}
+emplSum = countDeptDat3Zero2NA[,c('Empl', 'Sum')]
+emplTab = as.data.frame(table(emplSum$Sum))
+colnames(emplTab)[1] = 'n'
+emplTab$n = as.numeric(as.character(emplTab$n))
+```
+
+统计数据中可以得出，2000年后有院士入选的一共有`r nEmpl`个单位。
+我们统计一下这些单位的入选院士人数的分布，发现分布非常不均衡，在`r nEmpl`个单位中
+
+- 仅有1人入选的单位多达`r subset(emplTab,n==1)$Freq`个，占比`r 100*subset(emplTab,n==1)$Freq/nEmpl`%
+- 1~4人入选的单位`r sum(subset(emplTab,n>=1&n<=4)$Freq)`个，占比`r 100*sum(subset(emplTab,n>=1&n<=4)$Freq)/nEmpl`%
+- 超过（含）5人入选的有`r sum(subset(emplTab,n>=5)$Freq)`个单位，占比`r 100*sum(subset(emplTab,n>=5)$Freq)/nEmpl`%
+- 超过（含）10人入选的有`r sum(subset(emplTab,n>=10)$Freq)`个单位，占比`r 100*sum(subset(emplTab,n>=10)$Freq)/nEmpl`%
+- 超过（含）15人入选的有`r sum(subset(emplTab,n>=15)$Freq)`个单位，占比`r 100*sum(subset(emplTab,n>=15)$Freq)/nEmpl`%
+- 超过（含）20人入选的有`r sum(subset(emplTab,n>=20)$Freq)`个单位，占比`r 100*sum(subset(emplTab,n>=20)$Freq)/nEmpl`%
+- 超过（含）30人入选的有`r sum(subset(emplTab,n>=30)$Freq)`个单位，占比`r 100*sum(subset(emplTab,n>=30)$Freq)/nEmpl`%
+
+我们把排名前30的单位画出柱状图，来更直观地查看:
+
+```{r fig.width=6.5, fig.height=8, out.width='600px'}
+tmp2 = emplSum[1:30,]
+ggplot(tmp2, aes(x=reorder(Empl, Sum), y=Sum)) + 
+  geom_bar(stat = 'identity', aes(color = Empl, fill = Empl)) + 
+  theme(legend.position = 'none')  + 
+  coord_flip() + geom_text(aes(label = Sum), hjust =  - 0.2) +
+  ylab('入选中科院院士人数（2001~2021，前30个单位）') + xlab(NULL) 
+```
+
+## 双一流大学分析
+
+接下来，我们看看A类一流大学建设高校（共36所）的院士情况，学校名单来自教育部官网。
+
+36所A类一流大学共入选中科院院士242位，占比41%。
+
+```{r shuangyiliu, fig.width=6, fig.height=8, out.width='600px'}
+## 36所双一流A类
+shuangyiliu = '北京大学、中国人民大学、清华大学、北京航空航天大学、北京理工大学、中国农业大学、北京师范大学、中央民族大学、南开大学、天津大学、大连理工大学、吉林大学、哈尔滨工业大学、复旦大学、同济大学、上海交通大学、华东师范大学、南京大学、东南大学、浙江大学、中国科学技术大学、厦门大学、山东大学、中国海洋大学、武汉大学、华中科技大学、中南大学、中山大学、华南理工大学、四川大学、重庆大学、电子科技大学、西安交通大学、西北工业大学、兰州大学、国防科技大学'
+shuangyiliuSeg = unlist(strsplit(shuangyiliu, '、'))
+rownames(emplSum) = emplSum$Empl
+s36 = emplSum[shuangyiliuSeg,]
+zeroS = setdiff(shuangyiliuSeg, emplSum$Empl)
+s36[which(is.na(s36$Sum)),]$Empl = zeroS
+s36[which(is.na(s36$Sum)),]$Sum = 0
+s36 = arrange(s36, desc(Sum))
+ggplot(s36, aes(x=reorder(Empl, Sum), y=Sum)) + 
+  geom_bar(stat = 'identity', aes(color = Empl, fill = Empl)) + 
+  theme(legend.position = 'none')  + 
+  coord_flip() + geom_text(aes(label = Sum), hjust =  - 0.2) +
+  ylab('A类一流大学建设高校入选中科院院士人数（2001~2021）') + xlab(NULL) 
+```
+
+
+从图中可以得到：
+
+
+- 20+个院士入选的高校有`r length(subset(s36, Sum>20)$Empl)`所：`r gsub(',','、',toString(subset(s36, Sum>20)$Empl))`
+- 10~19个院士入选的高校有`r length(subset(s36, Sum>=10 & Sum<20)$Empl)`所：`r gsub(',','、',toString(subset(s36, Sum>=10 & Sum<20)$Empl))`
+- 5~9个院士入选的高校有`r length(subset(s36, Sum>=5 & Sum<10)$Empl)`所：`r gsub(',','、',toString(subset(s36, Sum>=5 & Sum<10)$Empl))`
+- 1~4个院士入选的高校有`r length(subset(s36, Sum>=1 & Sum<5)$Empl)`所：`r gsub(',','、',toString(subset(s36, Sum>=1 & Sum<5)$Empl))`
+- 0个院士入选的高校有`r length(subset(s36, Sum<0.5)$Empl)`所：`r gsub(',','、',toString(subset(s36, Sum<0.5)$Empl))`
+
+
+## 区域分析
+
+接下来，我们看看各省的院士增选情况。
+
+```{r echo=FALSE}
+ProvSummary = summarise_all(group_by(countDeptDatWide[,-c(1,3,4)], Prov), sum)
+ProvSummary = arrange(ProvSummary, desc(Sum))
+ProvSummaryZero2NA = ProvSummary
+for(i in 2:12){
+  f = which(ProvSummaryZero2NA[, i]==0)
+  ProvSummaryZero2NA[f, i] = NA
+}
+datatable(ProvSummaryZero2NA,  options = list(pageLength=30), # filter = 'top',
+          colnames = c('省', Y01_21, '和'))
+```
+
+```{r warning=FALSE}
+temp = ProvSummaryZero2NA[,c('Prov', 'Sum')]
+provAll =
+c('北京',	'天津',	'河北',	'山西',	'内蒙古',	'辽宁',
+'吉林',	'黑龙江','上海', '江苏', '浙江',	'安徽',
+'福建',	'江西',	'山东',	'河南',	'湖北',	'湖南',
+'广东',	'广西',	'海南',	'重庆',	'四川',	'贵州',
+'云南',	'西藏',	'陕西',	'甘肃',	'青海',	'宁夏',
+'新疆',	'香港',	'澳门',	'台湾')
+zeroProv = setdiff(provAll, temp$Prov)
+df_zeroProv = data.frame(Prov=zeroProv, Sum=0)
+provCount = rbind(na.omit(temp), df_zeroProv)
+rownames(provCount) = provCount$Prov
+```
+
+我们可以看到以下重要信息：
+
+- 北京的入选数独占鳌头，多达`r provCount['北京', ]$Sum`个，占比`r round(provCount['北京', ]$Sum/N*100,2)`%
+- 上海、江苏、湖北、安徽、香港、陕西均超过了20个
+- `r gsub(',','、', toString(zeroProv))`等`r length(zeroProv)`个省级行政区域近20年尚无中新入选科院院士
+
+对所有省级单位的增选总数画出柱状图，来更直观地查看:
+
+```{r fig.width=6.5, fig.height=8, out.width='600px', warning=FALSE}
+ggplot(provCount, aes(x=reorder(Prov, Sum), y=Sum)) + 
+  geom_bar(stat = 'identity', aes(color = Prov, fill = Prov)) + 
+  theme(legend.position = 'none')  + 
+  scale_y_continuous(limits = c(-10,285), expand = c(0, 0)) +
+  coord_flip() + geom_text(aes(label = Sum), hjust =  - 0.2) +
+  ylab('各省级行政单位入选中科院院士人数（2001~2021）') + xlab(NULL) 
+```
+
+
+
+
+## 单位类型分析
+
+接下来，我们从单位的类型来汇总和查看数据。
+
+
+```{r echo=FALSE}
+typeSummary = summarise_all(group_by(countDeptDatWide[,-c(1, 2, 3)], Type), sum)
+typeSummary = arrange(typeSummary, desc(Sum))
+typeSummaryZero2NA = typeSummary
+for(i in 2:12){
+  f = which(typeSummaryZero2NA[, i]==0)
+  typeSummaryZero2NA[f, i] = NA
+}
+datatable(typeSummaryZero2NA, options = list(pageLength=30), # filter = 'top', 
+          colnames = c('类型', Y01_21, '和'))
+```
+
+```{r fig.width=6, fig.height=8, out.width='600px'}
+typeSum = typeSummaryZero2NA[,c('Type', 'Sum')]
+
+ggplot(na.omit(typeSum), aes(x=reorder(Type, Sum), y=Sum)) + 
+  geom_bar(stat = 'identity', aes(color = Type, fill = Type)) + 
+  theme(legend.position = 'none')  + 
+  scale_y_continuous(limits = c(-10,260), expand = c(0, 0)) +
+  coord_flip() + geom_text(aes(label = Sum), hjust =  - 0.2) +
+  ylab('各类型单位入选中科院院士人数（2001~2021）') + xlab(NULL) 
+```
+
+可以看到以下主要信息，
+
+- 两大龙头是：教育部直属院校（`r subset(typeSum,Type=='教育部')$Sum`个）
+和中科院相关院所（`r subset(typeSum,Type=='中国科学院')$Sum`个），共新入选（`r subset(typeSum,Type %in% c('教育部','中国科学院' ))$Sum |> sum()`个）个院士，占比为`r subset(typeSum,Type %in% c('教育部','中国科学院' ))$Sum |> sum()*100/N`%，接近80%
+- 其他占比较高的包括
+  - 地方院校（`r subset(typeSum,Type=='地方院校')$Sum`个，占比`r subset(typeSum,Type=='地方院校')$Sum/N*100`%；含香港高校）
+  - 军事单位（`r subset(typeSum,Type=='军事单位')$Sum`个，占比`r subset(typeSum,Type=='军事单位')$Sum*100/N`%；数据不含军工企业，仅包含部队和相关学校）
+  - 工信部直属院校（`r subset(typeSum,Type=='工信部')$Sum`个，占比`r subset(typeSum,Type=='工信部')$Sum/N*100`）%
+  - 中国航天系统（`r subset(typeSum,Type=='中国航天')$Sum`个，占比`r subset(typeSum,Type=='中国航天')$Sum*N/100`%；含航天科技和航天科工）
+  - 中国工程物理研究院（`r subset(typeSum,Type=='中国工程物理研究院')$Sum`个，占比`r subset(typeSum,Type=='中国工程物理研究院')$Sum/N*100`%）
+
+## 年龄变化
+
+最后，我们再来看看年龄变化趋势。
+
+```{r out.width='600px'}
+library(dplyr)
+ageDat = summarise(group_by(cas, Year), AveAge=round(mean(Age),2))
+ggplot(ageDat, aes(x=Year, y=AveAge)) + geom_bar(stat = 'identity', fill='pink')+
+  geom_text(aes(label = AveAge), vjust = - 0.2) + xlab(NULL) + ylab('平均年龄')
+
+```
+很明显，从2001到2011年间，中科院新入选院士的年龄整体变小，趋势明显
+尤其在2011年，入选年龄算数均值最低，2011年的平均年龄（52.69岁）比2001年（60.59岁）小了将近8岁！
+而此后，年龄总体小幅度上扬，2021年的平均年龄比2011年增加了5岁。
+
+
+```{r age, out.width='600px'}
+# grouped boxplot
+ggplot(cas, aes(x=Year, y=Age)) + geom_boxplot(aes(fill=Year)) +
+   theme(legend.position = 'none') + xlab(NULL) + ylab('年龄')
+```
+更进一步，我们来看分布的变化。从图中可以看到，40岁以下的离群点有三个，都是在2001和2003年。
+年龄最大的是在2011年产生，75岁。
+从图中还可以看到，2005、2007、2009年度增选院士的年龄分布比较宽，
+此后院士年龄的分布标准差变小，也就是年龄越来越集中。
+可以猜测，院士的年龄，可能也被作为一个重要的考察因素。
+
+
+
+```{r age-all, eval=FALSE, fig.width=10,fig.height=8}
+ggplot(cas, aes(x=Year, y=Age, fill=Dept)) + geom_boxplot() + xlab(NULL) + ylab('年龄')
+```
+
+我们可以绘制箱线图，分学部看看年龄的分布变化：
+
+```{r age-facet, fig.width=8,fig.height=5}
+ggplot(cas, aes(x=Year, y=Age, fill=Dept)) + geom_boxplot() + facet_wrap(~Dept) + 
+  theme(legend.position = 'none') + scale_x_discrete(breaks=seq(2001,2021,2), labels=Y01_21) +
+  xlab('年份') + ylab('年龄')
+```
+
+以上，就是本文对中科院2000年以来11次院士增选的初步分析。
+
+鉴于本吃瓜群众不了解相关业务知识，因此仅从数据表现上阐述一些非常初步的规律。
+如果您对数据背后的业务和规律有更多了解，欢迎指正和补充。
+
+
+## 数据和程序说明
+
+院士增选数据来自于[中科院官网](http://casad.cas.cn/yszx2017/jj/201504/t20150429_4683835.html)，
+我们通过爬虫和OCR工具获取和整理了原始数据，经过初步的人工审核，存放在`CAS-Fellow-2001-2021.csv`文件中。
+为了分析单位所在的省、市和类型，建立了入选单位的省、市和类型对照数据表，主要靠人工维护，存放在`Empl_location.csv`文件中。
+本报告用rmarkdown撰写，相关图表自动生成，得到的HTML文档中的表格支持搜索和交互查询。
+
+还需要特别说明的几点是：
+
+- 同一个单位在不同年份叫法并不统一（比如中科院X所，中国科学院X所），我们对这些单位名称进行了归一
+- 生命科学和医学学部之前被称为生物学部，统一为现在的名称：生命科学和医学学部
+- 大学的附属医院、国企的下属研究院往上进行了合并，比如复旦大学附属中山医院，合并入复旦大学
+- 部分单位在多个地方有分布，在填写所在地的时候，一般以总部为主，比如北京，这样会有一点副作用
+- 少数院士有两个单位，我们在计算的时候只要单位都在国内，都分别都算1个
+- 部分单位在历史中，发生过组织上的合并和撤销，对这方面也不作处理
+
+
+## 项目地址和版权协议
+
+本项目相关地址如下，欢迎star、fork、pr三连：
+
+- 主页地址：[https://cosx.org/CAS-fellow.html](https://github.com/cosname/CAS-fellow/)
+- Github地址：[https://github.com/cosname/CAS-fellow/](https://github.com/cosname/CAS-fellow/)
+- Gitee地址：[https://gitee.com/costudy/CAS-fellow/](https://gitee.com/costudy/CAS-fellow/)
+
+本项目版权协议使用[木兰宽松许可证第二版](http://license.coscl.org.cn/MulanPSL2)，请遵守相关规定。
+
+## 关于数说风云
+
+【数说风云】是由统计之都发起，针对热点或重大话题，开放式约稿，
+以共享数据、传播技术、启发思考、促进创新。欢迎讨论、欢迎参与、欢迎投稿！
+联系邮箱：editor@cosx.org
+
+
+
+ 
