@@ -33,11 +33,15 @@
 
 本项目相关地址如下，欢迎star、fork、pr三连：
 
-- 主页地址：[https://cosx.org/CAS-fellow.html](https://github.com/cosname/CAS-fellow/)
+- 动态报告：[https://cosx.org/CAS-fellow.html](https://cosx.org/CAS-fellow.html)
 - Github地址：[https://github.com/cosname/CAS-fellow/](https://github.com/cosname/CAS-fellow/)
 - Gitee地址：[https://gitee.com/costudy/CAS-fellow/](https://gitee.com/costudy/CAS-fellow/)
 
 本项目版权协议使用[木兰宽松许可证第二版](http://license.coscl.org.cn/MulanPSL2)，请遵守相关规定。
+
+引用格式：
+
+> 六边形吃瓜群众，**2000-2021年中科院院士增选数据分析**，统计之都，2021，URL：https://cosx.org/CAS-fellow.html
 
 ## 关于数说风云
 
