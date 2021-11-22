@@ -32,7 +32,7 @@
 
 本项目相关地址如下，欢迎star、fork、pr三连：
 
-- 动态报告：[https://cosx.org/CAS-fellow.html](https://github.com/cosname/CAS-fellow/)
+- 动态报告：[https://cosname.github.io/CAS-fellow/](https://cosname.github.io/CAS-fellow/)
 - 项目地址（Github）：[https://github.com/cosname/CAS-fellow/](https://github.com/cosname/CAS-fellow/)
 - 项目地址（Gitee）：[https://gitee.com/costudy/CAS-fellow/](https://gitee.com/costudy/CAS-fellow/)
 
@@ -40,7 +40,7 @@
 
 引用格式：
 
-> 六边形吃瓜群众，**数说风云：2000-2021年中科院院士增选数据分析**，统计之都，2021，URL：https://cosx.org/CAS-fellow.html
+> 六边形吃瓜群众，**数说风云：2000-2021年中科院院士增选数据分析**，统计之都，2021，URL：https://cosname.github.io/CAS-fellow/
 
 
 ## 关于数说风云
