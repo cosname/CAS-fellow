@@ -5,7 +5,7 @@
 
 我们整理了2000-2021年共11次中科院院士增选信息以及相关单位地址和类型，
 从人数、学部、单位、双一流大学、区域、单位类型、年龄等多个角度进行统计、可视化和比较分析。
-最终形成了一份[交互式分析报告](http://costudy.gitee.io/cas-fellow/)，以满足自己和读者的好奇心。
+最终形成了一份[交互式分析报告](https://costudy.gitee.io/cas-fellow/)，以满足自己和读者的好奇心。
 
 
 ## 数据和程序说明
@@ -32,7 +32,7 @@
 
 本项目相关地址如下，欢迎star、fork、pr三连：
 
-- 动态报告：[http://costudy.gitee.io/cas-fellow/](http://costudy.gitee.io/cas-fellow/)
+- 动态报告：[https://costudy.gitee.io/cas-fellow/](http://costudy.gitee.io/cas-fellow/)
 - 项目地址（Gitee）：[https://gitee.com/costudy/CAS-fellow/](https://gitee.com/costudy/CAS-fellow/)
 - 项目地址（Github）：[https://github.com/cosname/CAS-fellow/](https://github.com/cosname/CAS-fellow/)
 
@@ -40,7 +40,7 @@
 
 引用格式：
 
-> 六边形吃瓜群众，**数说风云：2000-2021年中科院院士增选数据分析**，统计之都，2021，URL：http://costudy.gitee.io/cas-fellow/
+> 六边形吃瓜群众，**数说风云：2000-2021年中科院院士增选数据分析**，统计之都，2021，URL：https://costudy.gitee.io/cas-fellow/
 
 ## 关于数说风云
 

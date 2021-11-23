@@ -400,7 +400,7 @@ ggplot(cas, aes(x=Year, y=Age, fill=Dept)) + geom_boxplot() + facet_wrap(~Dept) 
 
 本项目相关地址如下，欢迎star、fork、pr三连：
 
-- 动态报告：[http://costudy.gitee.io/cas-fellow/](http://costudy.gitee.io/cas-fellow/)
+- 动态报告：[https://costudy.gitee.io/cas-fellow/](https://costudy.gitee.io/cas-fellow/)
 - 项目地址（Gitee）：[https://gitee.com/costudy/CAS-fellow/](https://gitee.com/costudy/CAS-fellow/)
 - 项目地址（Github）：[https://github.com/cosname/CAS-fellow/](https://github.com/cosname/CAS-fellow/)
 
