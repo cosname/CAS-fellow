@@ -90,8 +90,9 @@ ggplot(countDat, aes(x=Year, y=Count)) + geom_bar(stat = 'identity', fill='pink'
 发现这两年总名额都为60位，但投票规则较以往更为严苛，要求新增选院士获得的赞同票要不少于投票人数的2/3才有当选资格。
 要求非常高，竞争很激烈，因此很多名额都落空了。
 
+## 学部分析
 
-```{r fig.width=7, fig.height=3.5, out.width='600px'}
+```{r fig.width=7, fig.height=3.5, out.width='700px'}
 countDeptDat = summarise(group_by(cas, Year, Dept), Count=n())
 countDeptDatWide = countDeptDat %>% spread(Year, Count) 
 mat = as.matrix(countDeptDatWide[,-1])
@@ -100,8 +101,6 @@ rownames(mat) = countDeptDatWide$Dept
 corrplot(mat, method='color',is.corr=FALSE, addCoef.col = 'grey30', na.label = ' ',
          col.lim = c(0, 20), tl.srt = 0, tl.cex = 1, tl.col = 'grey30')
 ```
-
-## 学部分析
 
 我们再来分学部和年份看看，用热力图看到各个学部的入选人数。可以看到，
 
@@ -197,7 +196,7 @@ emplTab$n = as.numeric(as.character(emplTab$n))
 
 我们把排名前30的单位画出柱状图，来更直观地查看:
 
-```{r fig.width=6.5, fig.height=8, out.width='600px'}
+```{r fig.width=6.5, fig.height=8, out.width='700px'}
 tmp2 = emplSum[1:30,]
 ggplot(tmp2, aes(x=reorder(Empl, Sum), y=Sum)) + 
   geom_bar(stat = 'identity', aes(color = Empl, fill = Empl)) + 
@@ -212,7 +211,7 @@ ggplot(tmp2, aes(x=reorder(Empl, Sum), y=Sum)) +
 
 36所A类一流大学共入选中科院院士242位，占比41%。
 
-```{r shuangyiliu, fig.width=6, fig.height=8, out.width='600px'}
+```{r shuangyiliu, fig.width=6, fig.height=8, out.width='700px'}
 ## 36所双一流A类
 shuangyiliu = '北京大学、中国人民大学、清华大学、北京航空航天大学、北京理工大学、中国农业大学、北京师范大学、中央民族大学、南开大学、天津大学、大连理工大学、吉林大学、哈尔滨工业大学、复旦大学、同济大学、上海交通大学、华东师范大学、南京大学、东南大学、浙江大学、中国科学技术大学、厦门大学、山东大学、中国海洋大学、武汉大学、华中科技大学、中南大学、中山大学、华南理工大学、四川大学、重庆大学、电子科技大学、西安交通大学、西北工业大学、兰州大学、国防科技大学'
 shuangyiliuSeg = unlist(strsplit(shuangyiliu, '、'))
@@ -279,7 +278,7 @@ rownames(provCount) = provCount$Prov
 
 对所有省级单位的增选总数画出柱状图，来更直观地查看:
 
-```{r fig.width=6.5, fig.height=8, out.width='600px', warning=FALSE}
+```{r fig.width=6, fig.height=8, out.width='700px', warning=FALSE}
 ggplot(provCount, aes(x=reorder(Prov, Sum), y=Sum)) + 
   geom_bar(stat = 'identity', aes(color = Prov, fill = Prov)) + 
   theme(legend.position = 'none')  + 
@@ -308,7 +307,7 @@ datatable(typeSummaryZero2NA, options = list(pageLength=30), # filter = 'top',
           colnames = c('类型', Y01_21, '和'))
 ```
 
-```{r fig.width=6, fig.height=8, out.width='600px'}
+```{r fig.width=6, fig.height=6, out.width='700px'}
 typeSum = typeSummaryZero2NA[,c('Type', 'Sum')]
 
 ggplot(na.omit(typeSum), aes(x=reorder(Type, Sum), y=Sum)) + 
@@ -319,7 +318,7 @@ ggplot(na.omit(typeSum), aes(x=reorder(Type, Sum), y=Sum)) +
   ylab('各类型单位入选中科院院士人数（2001~2021）') + xlab(NULL) 
 ```
 
-可以看到以下主要信息，
+可以看到以下主要信息:
 
 - 两大龙头是：教育部直属院校（`r subset(typeSum,Type=='教育部')$Sum`个）
 和中科院相关院所（`r subset(typeSum,Type=='中国科学院')$Sum`个），共新入选（`r subset(typeSum,Type %in% c('教育部','中国科学院' ))$Sum |> sum()`个）个院士，占比为`r subset(typeSum,Type %in% c('教育部','中国科学院' ))$Sum |> sum()*100/N`%，接近80%
@@ -341,7 +340,7 @@ ggplot(ageDat, aes(x=Year, y=AveAge)) + geom_bar(stat = 'identity', fill='pink')
   geom_text(aes(label = AveAge), vjust = - 0.2) + xlab(NULL) + ylab('平均年龄')
 
 ```
-很明显，从2001到2011年间，中科院新入选院士的年龄整体变小，趋势明显
+很明显，从2001到2011年间，中科院新入选院士的年龄整体变小，趋势明显。
 尤其在2011年，入选年龄算数均值最低，2011年的平均年龄（52.69岁）比2001年（60.59岁）小了将近8岁！
 而此后，年龄总体小幅度上扬，2021年的平均年龄比2011年增加了5岁。背后的机制和原因有待考察。
 
@@ -401,15 +400,15 @@ ggplot(cas, aes(x=Year, y=Age, fill=Dept)) + geom_boxplot() + facet_wrap(~Dept) 
 
 本项目相关地址如下，欢迎star、fork、pr三连：
 
-- 动态报告：[https://cosname.github.io/CAS-fellow/](https://cosname.github.io/CAS-fellow/)
-- 项目地址（Github）：[https://github.com/cosname/CAS-fellow/](https://github.com/cosname/CAS-fellow/)
+- 动态报告：[https://costudy.gitee.io/cas-fellow/](https://costudy.gitee.io/cas-fellow/)
 - 项目地址（Gitee）：[https://gitee.com/costudy/CAS-fellow/](https://gitee.com/costudy/CAS-fellow/)
+- 项目地址（Github）：[https://github.com/cosname/CAS-fellow/](https://github.com/cosname/CAS-fellow/)
 
 本项目版权协议使用[木兰宽松许可证第二版](http://license.coscl.org.cn/MulanPSL2)，请遵守相关规定。
 
 引用格式：
 
-> 六边形吃瓜群众，**数说风云：2000-2021年中科院院士增选数据分析**，统计之都，2021，URL：https://cosname.github.io/CAS-fellow/
+> 六边形吃瓜群众，**数说风云：2000-2021年中科院院士增选数据分析**，统计之都，2021，URL：http://costudy.gitee.io/cas-fellow/
 
 
 
